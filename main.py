@@ -1,5 +1,5 @@
 import requests
-import bs4
+from bs4 import BeautifulSoup
 import httplib2
 import apiclient
 from oauth2client.service_account import ServiceAccountCredentials
@@ -38,21 +38,22 @@ if spreadsheet_id == "":
     ).execute()
 
 """Парсим данные из яндекс лавки"""
+home_str = requests.get("https://lavka.yandex.ru/43/").text
+home = BeautifulSoup(home_str, "lxml")
 list_of_urls = []
 products_category = []
-home_str = requests.get("https://lavka.yandex.ru/43/").text
-home = bs4.BeautifulSoup(home_str, "lxml")
 for tag in home.find_all("a", class_="azs7ia1"):
     list_of_urls.append("https://lavka.yandex.ru" + tag["href"])
-    products_category.append(tag.div.span.text.replace("\u200e", "").replace("\xa0", " ").replace("\xad", ""))
+    products_category.append(
+        tag.div.span.text.replace("\u200e", "").replace("\xa0", " ").replace("\xad", ""))
 
 products_name = []
 products_cost = []
 new_products_category = []
 
-for chapter_url, category_name in zip(list_of_urls, products_category):
-    chapter = bs4.BeautifulSoup(requests.get(chapter_url).text, "lxml").find_all("div", class_="iw2of08")
-    for product in chapter:
+for category_url, category_name in zip(list_of_urls, products_category):
+    category = BeautifulSoup(requests.get(category_url).text, "lxml").find_all("div", class_="iw2of08")
+    for product in category:
         new_products_category.append(category_name)
         products_name.append(product.h3.text)
         if product.find("span", class_="a1dq5c6d") is None:  # если на товар нет скидки
